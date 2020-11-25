@@ -54,11 +54,11 @@ def get_original_date_time(filename, time_attribute=TIME_ATTRIBUTE):
     return exif_info[time_attribute]
 
 def string_to_datetime(date, given_format=DATE_FORMAT):
-    return datetime.datetime.strptime(date, given_format)
+    '''
+    convert date in string format to datetime format 
+    '''
 
-exif_info = get_exif_info('P1110750.JPG')
-orig_date = get_original_date_time('P1110750.JPG')
-the_date = string_to_datetime(orig_date, DATE_FORMAT)
+    return datetime.datetime.strptime(date, given_format)
 
 def get_files_in_dir(path):
     files_in_dir = [element for element in path.iterdir() if os.path.isfile(element)]
@@ -67,42 +67,59 @@ def get_files_in_dir(path):
 
     return files_in_dir, dirs_in_dir, rest_in_dir
 
-def beautify_filename(aFile, date):
+def get_file_info_from_filename(aFile, date):
     part_date = date.strftime('%Y_%m_%d_%H%M%S')
     filename = aFile.name[:-len(aFile.suffix)]
 
     file_description = [ele for ele in filename.split('__') if str(date.year) not in ele]
-    print('... {} : {}'.format(aFile.name, file_description))
 
+    if not file_description: 
+        return ''
+
+    return file_description[-1]
 
 def get_nice_original_date_time(files):
-    files_to_be_renamed = {}
+    files_with_date = {}
     files_sorted_out = []
 
     for aFile in files:
         file_date_time = get_original_date_time(str(aFile))
         
         if file_date_time == ERROR_EXIF_READ:
-            print('OHOH {}'.format(aFile))
+            # could not read exif information - nothing else is done with this file
+            print('error: exif information could not be read, {}'.format(aFile))
             files_sorted_out.append(aFile)
+            
         elif file_date_time == ERROR_TIME_READ:
-            print('OHNOO {}'.format(aFile))            
+            # could not read time information - try another exif attribute instead 
             file_date_time = get_original_date_time(str(aFile), time_attribute=TIME_ATTRIBUTE2)
+
             if file_date_time == ERROR_TIME_READ:
-                print('OHNOO2 {}'.format(aFile))                        
+                # the other exif attribute could not be read/found either
+                print('error: time information could not be read twice, {}'.format(aFile))                        
                 files_sorted_out.append(aFile)
+
             else:
-                beautify_filename(aFile, string_to_datetime(file_date_time[:file_date_time.find('+')]))
-                files_to_be_renamed[aFile] = 'xxx'
+                standardized_date = file_date_time[:file_date_time.find('+')]
+                files_with_date[aFile] = string_to_datetime(standardized_date)
+
         else:
             print("{}: {}".format(aFile.suffix, file_date_time))
-            beautify_filename(aFile, string_to_datetime(file_date_time))
-            files_to_be_renamed[aFile] = 'yyy'
+            files_with_date[aFile] = string_to_datetime(file_date_time)
 
-    return files_to_be_renamed, files_sorted_out
+    return files_with_date, files_sorted_out
 
 files, dirs, rest = get_files_in_dir(p)
-get_nice_original_date_time(files)
+files_with_date, files_without_date = get_nice_original_date_time(files)
 debug_here()
 
 
+
+# for testing
+# get exif info for given pic
+# get orig date for given pic
+# convert string date to datetime 
+
+exif_info = get_exif_info('P1110750.JPG')
+orig_date = get_original_date_time('P1110750.JPG')
+the_date = string_to_datetime(orig_date, DATE_FORMAT)
