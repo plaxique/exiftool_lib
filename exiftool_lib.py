@@ -76,9 +76,11 @@ def get_file_info_from_filename(aFile, date):
     if not file_description: 
         return ''
 
-    return file_description[-1]
+    file_description_standardized = file_description[-1].replace(' ', '_')
 
-def get_nice_original_date_time(files):
+    return file_description_standardized
+
+def get_files_and_original_date_time(files):
     files_with_date = {}
     files_sorted_out = []
 
@@ -104,13 +106,37 @@ def get_nice_original_date_time(files):
                 files_with_date[aFile] = string_to_datetime(standardized_date)
 
         else:
-            print("{}: {}".format(aFile.suffix, file_date_time))
             files_with_date[aFile] = string_to_datetime(file_date_time)
+
+#        print("{}: {}: {}".format(aFile.suffix, file_date_time, files_with_date[aFile]))
 
     return files_with_date, files_sorted_out
 
+def beautify_filename(files_with_date, additional_info=''):
+    files_with_name = {}
+
+    print('WOHOO')
+
+    for a_file, file_date in files_with_date.items():
+        print(a_file)
+        filename_prefix_date = file_date.strftime('%Y_%m_%d_%H%M%S')
+        filename_info = get_file_info_from_filename(a_file, file_date)
+
+        if filename_info and additional_info:
+            print('a: {}_{}_{}{}'.format(filename_prefix_date, filename_info, additional_info, a_file.suffix))
+        elif filename_info: 
+            print('b: {}_{}{}'.format(filename_prefix_date, filename_info, a_file.suffix))
+        elif additional_info:
+            print('c: {}_{}{}'.format(filename_prefix_date, additional_info, a_file.suffix))
+        else: 
+            print('d: {}{}'.format(filename_prefix_date, a_file.suffix))
+
+# get files, get date time, create 'renamed' dictionary, copy files and rename them
 files, dirs, rest = get_files_in_dir(p)
-files_with_date, files_without_date = get_nice_original_date_time(files)
+files_with_date, files_without_date = get_files_and_original_date_time(files)
+print('done')
+files_with_new_filename = beautify_filename(files_with_date)
+
 debug_here()
 
 
